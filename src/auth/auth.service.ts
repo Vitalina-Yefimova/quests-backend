@@ -1,8 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { RegisterDto } from '../auth/dto/register.dto';
-import { LoginDto } from '../auth/dto/login.dto';
+import { AuthPayload } from './interfaces/auth-payload.interface';
+import { AuthResponse } from './interfaces/auth-response.interface';
+import { LoginPayload } from './interfaces/login-payload.interface';
+import { AuthUser } from './interfaces/auth-user.interface';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -12,57 +14,45 @@ export class AuthService {
     private jwtService: JwtService,
   ) { }
 
-  async register(dto: RegisterDto) {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+  async register(data: AuthPayload): Promise<AuthResponse> {
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ email: data.email },
+        { phone: data.phone }
+        ]
+      }
     });
 
     if (existingUser) {
-      throw new UnauthorizedException('User with this email already exists');
+      throw new BadRequestException('User already exists');
     }
 
-    const phoneNumber = await this.prisma.user.findUnique({
-      where: { phone: dto.phone },
-    });
-
-    if (phoneNumber) {
-      throw new UnauthorizedException('User with this phone number already exists');
-    }
-
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const hashedPassword = await bcrypt.hash(data.password, 10); // 10 — это "salt rounds" (число раундов соль-перемешивания), которое указывает, сколько раз будет применён алгоритм хеширования к паролю при создании хэша
 
     const user = await this.prisma.user.create({
       data: {
-        name: dto.name,
-        email: dto.email,
+        name: data.name,
+        email: data.email,
         password: hashedPassword,
-        phone: dto.phone
+        phone: data.phone
       },
     });
 
-    return this.generateToken(user.id, user.email, user.role);
+    return {
+      access_token: this.jwtService.sign({ sub: user.id })
+    }
   }
+  async validateUser(data: LoginPayload): Promise<AuthUser> {
+    const user = await this.prisma.user.findUnique({ where: { email: data.email } })
 
-  async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('Invalid email');
+    if (!user || !(await bcrypt.compare(data.password, user.password))) {
+      throw new UnauthorizedException('Invalid credentials')
     }
 
-    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid password');
-    }
-
-    return this.generateToken(user.id, user.email, user.role);
+    return { id: user.id }
   }
 
-  private generateToken(userId: number, email: string, role: string) {
-    const payload = { sub: userId, email, role };
-    return this.jwtService.sign(payload);
+  async login(user: AuthUser): Promise<AuthResponse> {
+    return { access_token: this.jwtService.sign({ sub: user.id }) }
   }
 }

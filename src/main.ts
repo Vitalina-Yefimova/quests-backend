@@ -9,7 +9,7 @@ async function bootstrap() {
   const prismaService = app.get(PrismaService);
   await prismaService.enableShutdownHooks(app);
   app.enableCors({
-    origin: 'http://localhost:5173', // фронт
+    origin: 'http://localhost:5173', // front
     credentials: true,
   });
   app.useGlobalPipes(new ValidationPipe());
