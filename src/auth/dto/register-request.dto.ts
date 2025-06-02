@@ -5,6 +5,14 @@ export class RegisterRequestDto {
   @IsNotEmpty()
   name: string;
 
+
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^[a-zA-Z0-9_]+$/, {
+    message: 'Username must contain only letters, numbers, and underscores',
+  })
+  username: string;
+
   @IsEmail()
   @IsNotEmpty()
   @IsString()

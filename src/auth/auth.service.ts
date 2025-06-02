@@ -18,7 +18,8 @@ export class AuthService {
     const existingUser = await this.prisma.user.findFirst({
       where: {
         OR: [{ email: data.email },
-        { phone: data.phone }
+        { phone: data.phone },
+        { username: data.username },
         ]
       }
     });
@@ -32,6 +33,7 @@ export class AuthService {
     const user = await this.prisma.user.create({
       data: {
         name: data.name,
+        username: data.username,
         email: data.email,
         password: hashedPassword,
         phone: data.phone
@@ -43,7 +45,8 @@ export class AuthService {
     }
   }
   async validateUser(data: LoginPayload): Promise<AuthUser> {
-    const user = await this.prisma.user.findUnique({ where: { email: data.email } })
+    const isEmail = data.login.includes('@');
+    const user = await this.prisma.user.findUnique({ where: isEmail ? { email: data.login } : { username: data.login } })
 
     if (!user || !(await bcrypt.compare(data.password, user.password))) {
       throw new UnauthorizedException('Invalid credentials')
