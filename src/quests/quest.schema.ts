@@ -1,23 +1,25 @@
-import { Schema, model } from 'mongoose';
-import { QuestDocument } from './interfaces/quest-document.interface';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
 
-
-const QuestSchema = new Schema({
-  title: { type: String, required: true },
-  description: { type: String, required: true },
-  genres: {
+@Schema()
+export class Quest {
+  @Prop({ required: true }) title: string;
+  @Prop({ required: true }) description: string;
+  @Prop({
     type: [{ genreName: { type: String, required: true } }],
     required: true,
-  },
-  difficulty: { type: String, required: true },
-  duration: { type: String, required: true },
-  price: { type: Number, required: true },
-  image: { type: String, required: true },
-  imageBg: { type: String, required: true },
-});
+  })
+  genres: { genreName: string }[];
+  @Prop({ required: true }) players: string;
+  @Prop({ required: true }) difficulty: string;
+  @Prop({ required: true }) duration: string;
+  @Prop({ required: true }) price: number;
+  @Prop({ required: true }) image: string;
+  @Prop({ required: true }) imageBg: string;
+}
 
+export type QuestDocument = Quest & Document;
+
+export const QuestSchema = SchemaFactory.createForClass(Quest);
 
 QuestSchema.index({ 'genres.genreName': 1 });
-
-export const Quest = model<QuestDocument>('Quest', QuestSchema);
-

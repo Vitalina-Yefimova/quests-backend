@@ -8,7 +8,7 @@ export const questsData = [
     price: 100,
     description:
       'You find yourself trapped in an ancient crypt, the heavy stone door sealed behind you. The air is thick with dust, and faint whispers seem to echo from the walls. Candles flicker, casting eerie shadows over faded engravings and long-forgotten tombs. A hidden mechanism has been triggered—you have 90 minutes before the crypt is sealed forever. Can you decipher the cryptic symbols, unlock the secrets of the past, and escape before you become just another lost soul buried within these walls?',
-    image: '/images/crypt.jpg',
+    image: '/images/crypt.png',
     imageBg: '/images/crypt-bg.jpg',
   },
   {

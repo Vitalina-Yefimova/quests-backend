@@ -12,4 +12,8 @@ export class QuestsService {
   async insertMany(quests: CreateQuest[]): Promise<QuestDocument[]> {
     return this.questModel.insertMany(quests);
   }
+
+  async findAll(): Promise<QuestDocument[]> {
+    return this.questModel.find().exec();
+  }
 }
