@@ -1,6 +1,6 @@
 export interface CreateOrderInput {
   userId: number;
   questId: string;
-  date: Date;
+  date: string;
   participants: number;
 }
