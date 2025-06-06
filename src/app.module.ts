@@ -6,9 +6,10 @@ import { OrderModule } from './orders/order.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { FavoriteModule } from './favorites/favorite.module';
 
 @Module({
-  imports: [AuthModule, MongooseModule.forRoot(process.env.MONGO_URI), QuestsModule, OrderModule],
+  imports: [AuthModule, MongooseModule.forRoot(process.env.MONGO_URI), QuestsModule, OrderModule, FavoriteModule],
   providers: [
     {
       provide: APP_GUARD,
