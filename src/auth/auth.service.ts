@@ -36,7 +36,8 @@ export class AuthService {
         username: data.username,
         email: data.email,
         password: hashedPassword,
-        phone: data.phone
+        phone: data.phone,
+        role: data.role || 'USER',
       },
     });
 
@@ -52,10 +53,13 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials')
     }
 
-    return { id: user.id }
+    return {
+      id: user.id,
+      role: user.role
+    }
   }
 
   async login(user: AuthUser): Promise<AuthResponse> {
-    return { access_token: this.jwtService.sign({ sub: user.id }) }
+    return { access_token: this.jwtService.sign({ sub: user.id, role: user.role }) }
   }
 }
