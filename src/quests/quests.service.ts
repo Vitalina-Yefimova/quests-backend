@@ -1,19 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Quest } from './quest.schema';
-import { CreateQuest } from './interfaces/create-quest.interface';
-import { QuestDocument } from './interfaces/quest-document.interface';
+import { Quests } from '../mongo-schemas/quests.schema';
+import { QuestsRequest, QuestsDocument } from './interfaces';
 
 @Injectable()
 export class QuestsService {
-  constructor(@InjectModel(Quest.name) private questModel: Model<QuestDocument>) { }
+  constructor(@InjectModel(Quests.name) private questsModel: Model<QuestsDocument>) { }
 
-  async insertMany(quests: CreateQuest[]): Promise<QuestDocument[]> {
-    return this.questModel.insertMany(quests);
+  async insertMany(quests: QuestsRequest[]): Promise<QuestsDocument[]> {
+    return this.questsModel.insertMany(quests);
   }
 
-  async findAll(): Promise<QuestDocument[]> {
-    return this.questModel.find().exec();
+  async findAll(): Promise<QuestsDocument[]> {
+    return this.questsModel.find().exec();
   }
+
+  async findOne(id: string): Promise<QuestsDocument | null> {
+    return this.questsModel.findById(id).exec();
+  }
+
 }

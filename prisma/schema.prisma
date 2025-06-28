@@ -13,25 +13,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id       Int     @id @default(autoincrement())
-  name     String
-  username String   @unique
-  email    String  @unique
-  password String
-  phone    String  @unique
-  role     Role    @default(USER)
-  orders   Order[]
+model Users {
+  id         Int     @id @default(autoincrement())
+  firstName  String
+  lastName   String
+  email      String  @unique
+  password   String
+  phone      String  @unique
+  role       Role    @default(USER)
+  orders     Orders[]
+  verify     Boolean @default(false)
 }
 
-model Order {
+model Orders {
   id           Int      @id @default(autoincrement())
   userId       Int
-  user         User     @relation(fields: [userId], references: [id])
+  user         Users     @relation(fields: [userId], references: [id])
   participants Int
   date         DateTime
   price        Int
-  questId      String?
+  questId      String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

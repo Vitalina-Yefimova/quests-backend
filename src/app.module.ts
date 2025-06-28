@@ -2,14 +2,16 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { QuestsModule } from './quests/quests.module';
-import { OrderModule } from './orders/order.module';
+import { OrdersModule } from './orders/orders.module';
 import { APP_GUARD } from '@nestjs/core';
-import { RolesGuard } from './common/guards/roles.guard';
+import { RolesGuard } from './auth/guards/roles.guard';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
-import { FavoriteModule } from './favorites/favorite.module';
+import { FavoritesModule } from './favorites/favorites.module';
+import { UsersModule } from './users/users.module';
+
 
 @Module({
-  imports: [AuthModule, MongooseModule.forRoot(process.env.MONGO_URI), QuestsModule, OrderModule, FavoriteModule],
+  imports: [AuthModule, MongooseModule.forRoot(process.env.MONGO_URI), QuestsModule, OrdersModule, FavoritesModule, UsersModule],
   providers: [
     {
       provide: APP_GUARD,

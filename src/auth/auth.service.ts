@@ -1,65 +1,94 @@
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { AuthPayload } from './interfaces/auth-payload.interface';
-import { AuthResponse } from './interfaces/auth-response.interface';
-import { LoginPayload } from './interfaces/login-payload.interface';
-import { AuthUser } from './interfaces/auth-user.interface';
+import { SignUpRequest } from './interfaces';
+import { SignInResponse } from './interfaces';
 import * as bcrypt from 'bcrypt';
+import { UsersService } from 'src/users/users.service';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
+    private usersService: UsersService,
     private jwtService: JwtService,
+    private emailService: EmailService,
   ) { }
 
-  async register(data: AuthPayload): Promise<AuthResponse> {
-    const existingUser = await this.prisma.user.findFirst({
-      where: {
-        OR: [{ email: data.email },
-        { phone: data.phone },
-        { username: data.username },
-        ]
-      }
-    });
+  async signUp(data: SignUpRequest): Promise<SignInResponse> {
+    const existingUser = await this.usersService.getUser({
+      email: data.email,
+      phone: data.phone,
+    })
 
     if (existingUser) {
       throw new BadRequestException('User already exists');
     }
 
-    const hashedPassword = await bcrypt.hash(data.password, 10); // 10 — это "salt rounds" (число раундов соль-перемешивания), которое указывает, сколько раз будет применён алгоритм хеширования к паролю при создании хэша
+    const hashedPassword = await bcrypt.hash(data.password, 10);
 
-    const user = await this.prisma.user.create({
-      data: {
-        name: data.name,
-        username: data.username,
-        email: data.email,
-        password: hashedPassword,
-        phone: data.phone,
-        role: data.role || 'USER',
-      },
+    const user = await this.usersService.createUser({
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      password: hashedPassword,
+      verify: false,
     });
 
+    const verifyToken = this.jwtService.sign(
+      {
+        sub: user.id,
+        type: 'verify'
+      },
+    );
+
+    await this.emailService.sendVerifyEmail(user.email, verifyToken)
+
     return {
-      access_token: this.jwtService.sign({ sub: user.id })
+      access_token: this.jwtService.sign({
+        sub: user.id,
+        role: user.role
+      })
     }
   }
-  async validateUser(data: LoginPayload): Promise<AuthUser> {
-    const isEmail = data.login.includes('@');
-    const user = await this.prisma.user.findUnique({ where: isEmail ? { email: data.login } : { username: data.login } })
 
-    if (!user || !(await bcrypt.compare(data.password, user.password))) {
+  async validatePassword(email: string, password: string): Promise<{ id: number, role: string }> {
+    const user = await this.usersService.getUser({ email })
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Invalid credentials')
     }
 
+    return user
+  }
+
+  async signIn(user: {
+    email: string;
+    password: string;
+  }): Promise<SignInResponse> {
+
+    const userData = await this.validatePassword(user.email, user.password)
     return {
-      id: user.id,
-      role: user.role
+
+      access_token: this.jwtService.sign({
+        sub: userData.id,
+        role: userData.role,
+      })
     }
   }
 
-  async login(user: AuthUser): Promise<AuthResponse> {
-    return { access_token: this.jwtService.sign({ sub: user.id, role: user.role }) }
+  async verifyEmail(token: string) {
+    try {
+      const payload = this.jwtService.verify(token);
+      const userId = payload.sub;
+
+      await this.usersService.updateUser(userId, {
+        verify: true,
+      })
+
+      return { message: 'User verified successfully' };
+    } catch (error) {
+      throw new BadRequestException('Invalid or expired token')
+    }
   }
 }

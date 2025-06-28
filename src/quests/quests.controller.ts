@@ -1,21 +1,30 @@
-import { Controller, Body, Post, Get } from '@nestjs/common';
+import { Controller, Body, Post, Get, Param } from '@nestjs/common';
 import { QuestsService } from './quests.service';
-import { CreateManyQuestsDto } from './dto/create-many-quests.dto';
-import { QuestDocument } from './interfaces/quest-document.interface';
+import { QuestsCreateManyDto } from './dto/quests-create-many.dto';
+import { QuestsResponseDto } from './dto/quests-response.dto';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @Controller('quests')
 export class QuestsController {
   constructor(private readonly questsService: QuestsService) { }
 
-
   @Post('batch')
-  async insertMany(@Body() dto: CreateManyQuestsDto) {
-    return this.questsService.insertMany(dto.quests);
+  async insertMany(@Body() dto: QuestsCreateManyDto): Promise<QuestsResponseDto[]> {
+    const created = await this.questsService.insertMany(dto.quests);
+    return created.map((quest) => new QuestsResponseDto(quest));
   }
 
-
+  @Public()
   @Get()
-  async getAllQuests(): Promise<QuestDocument[]> {
-    return this.questsService.findAll();
+  async getAllQuests(): Promise<QuestsResponseDto[]> {
+    const quests = await this.questsService.findAll();
+    return quests.map((quest) => new QuestsResponseDto(quest));
+  }
+
+  @Public()
+  @Get(':id')
+  async getOneQuest(@Param('id') id: string): Promise<QuestsResponseDto> {
+    const quest = await this.questsService.findOne(id);
+    return new QuestsResponseDto(quest);
   }
 }

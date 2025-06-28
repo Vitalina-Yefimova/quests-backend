@@ -1,43 +1,36 @@
-import { Controller, Post, Body, UseGuards, Request, Get } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Headers } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RegisterRequestDto } from './dto/register-request.dto';
-import { RegisterResponseDto } from './dto/register-response.dto';
-import { LoginResponseDto } from './dto/login-response.dto';
-import { LocalAuthGuard } from './guards/local-auth.guard';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { SignUpRequestDto } from './dto/sign-up-request.dto';
+import { SignUpResponseDto } from './dto/sign-up-response.dto';
+import { SignInRequestDto } from './dto/sign-in-request.dto';
+import { SignInResponseDto } from './dto/sign-in-response.dto';
+import { Public } from 'src/common/decorators/public.decorator';
 
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService, private readonly prisma: PrismaService) { }
+  constructor(private readonly authService: AuthService) { }
 
-  @Post('register')
-  async register(@Body() dto: RegisterRequestDto): Promise<RegisterResponseDto> {
-    const data = await this.authService.register(dto)
-    return new RegisterResponseDto(data.access_token)
+  @Public()
+  @Post('sign-up')
+  async signUp(@Body() dto: SignUpRequestDto): Promise<SignUpResponseDto> {
+    const data = await this.authService.signUp(dto)
+    return new SignUpResponseDto(data.access_token)
   }
 
-  @UseGuards(LocalAuthGuard)
-  @Post('login')
-  async login(@Request() req): Promise<LoginResponseDto> {
-    const data = await this.authService.login(req.user);
-    return new LoginResponseDto(data.access_token);
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Post('sign-in')
+  async signIn(@Body() dto: SignInRequestDto): Promise<SignInResponseDto> {
+
+    const data = await this.authService.signIn(dto);
+    return new SignInResponseDto(data.access_token);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Post('check')
-  check(@Request() req) {
-    return req.user;
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('me')
-  async getProfile(@Request() req) {
-    console.log('REQ.USER:', req.user);
-    return this.prisma.user.findUnique({
-      where: { id: req.user.userId },
-      select: { id: true, name: true, username: true, email: true },
-    });
+  @Public()
+  @Post('verify')
+  async verify(@Headers('authorization') authHeader: string) {
+    const token = authHeader?.replace('Bearer ', '');
+    return this.authService.verifyEmail(token);
   }
 }

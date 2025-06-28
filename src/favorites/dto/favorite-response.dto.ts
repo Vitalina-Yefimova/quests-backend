@@ -1,6 +1,8 @@
 import { IsNumber, IsString } from 'class-validator';
+import { FavoritesResponse } from '../interfaces';
+import { BaseResponseDto } from 'src/common/dto/base-response.dto';
 
-export class FavoriteResponseDto {
+export class FavoritesResponseDto extends BaseResponseDto<FavoritesResponseDto> implements FavoritesResponse {
   @IsString()
   id: string;
 
@@ -9,8 +11,5 @@ export class FavoriteResponseDto {
 
   @IsString()
   questId: string;
-
-  constructor(partial: Partial<FavoriteResponseDto>) {
-    Object.assign(this, partial);
-  }
 }
+
