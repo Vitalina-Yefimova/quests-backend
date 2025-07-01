@@ -14,7 +14,3 @@ export interface SignUpRequest {
 export interface SignInResponse {
   access_token: string;
 }
-
-export interface SignUpResponse {
-  access_token: string;
-}

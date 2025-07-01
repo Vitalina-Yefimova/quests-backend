@@ -1,7 +1,6 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, Headers } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpRequestDto } from './dto/sign-up-request.dto';
-import { SignUpResponseDto } from './dto/sign-up-response.dto';
 import { SignInRequestDto } from './dto/sign-in-request.dto';
 import { SignInResponseDto } from './dto/sign-in-response.dto';
 import { Public } from 'src/common/decorators/public.decorator';
@@ -13,9 +12,8 @@ export class AuthController {
 
   @Public()
   @Post('sign-up')
-  async signUp(@Body() dto: SignUpRequestDto): Promise<SignUpResponseDto> {
-    const data = await this.authService.signUp(dto)
-    return new SignUpResponseDto(data.access_token)
+  async signUp(@Body() dto: SignUpRequestDto): Promise<{ email: string }> {
+    return await this.authService.signUp(dto);
   }
 
   @Public()

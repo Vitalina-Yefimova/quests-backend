@@ -4,17 +4,15 @@ import { SignUpRequest } from './interfaces';
 import { SignInResponse } from './interfaces';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from 'src/users/users.service';
-import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-    private emailService: EmailService,
   ) { }
 
-  async signUp(data: SignUpRequest): Promise<SignInResponse> {
+  async signUp(data: SignUpRequest): Promise<{ email: string }> {
     const existingUser = await this.usersService.getUser({
       email: data.email,
       phone: data.phone,
@@ -32,24 +30,9 @@ export class AuthService {
       email: data.email,
       phone: data.phone,
       password: hashedPassword,
-      verify: false,
     });
 
-    const verifyToken = this.jwtService.sign(
-      {
-        sub: user.id,
-        type: 'verify'
-      },
-    );
-
-    await this.emailService.sendVerifyEmail(user.email, verifyToken)
-
-    return {
-      access_token: this.jwtService.sign({
-        sub: user.id,
-        role: user.role
-      })
-    }
+    return { email: user.email }
   }
 
   async validatePassword(email: string, password: string): Promise<{ id: number, role: string }> {
@@ -68,8 +51,8 @@ export class AuthService {
   }): Promise<SignInResponse> {
 
     const userData = await this.validatePassword(user.email, user.password)
-    return {
 
+    return {
       access_token: this.jwtService.sign({
         sub: userData.id,
         role: userData.role,
@@ -80,13 +63,33 @@ export class AuthService {
   async verifyEmail(token: string) {
     try {
       const payload = this.jwtService.verify(token);
+
+      if (payload.type !== 'verify') {
+        throw new BadRequestException('Invalid token type');
+      }
+
       const userId = payload.sub;
+      const user = await this.usersService.getUser({ id: userId });
+
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+      if (user.verify) {
+        return {
+          message: 'Email already verified'
+        }
+      }
 
       await this.usersService.updateUser(userId, {
         verify: true,
       })
 
-      return { message: 'User verified successfully' };
+      return {
+        access_token: this.jwtService.sign({
+          sub: user.id,
+          role: user.role,
+        }),
+      };
     } catch (error) {
       throw new BadRequestException('Invalid or expired token')
     }

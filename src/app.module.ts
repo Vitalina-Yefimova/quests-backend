@@ -8,10 +8,11 @@ import { RolesGuard } from './auth/guards/roles.guard';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { FavoritesModule } from './favorites/favorites.module';
 import { UsersModule } from './users/users.module';
+import { EmailModule } from './email/email.module';
 
 
 @Module({
-  imports: [AuthModule, MongooseModule.forRoot(process.env.MONGO_URI), QuestsModule, OrdersModule, FavoritesModule, UsersModule],
+  imports: [AuthModule, MongooseModule.forRoot(process.env.MONGO_URI), QuestsModule, OrdersModule, FavoritesModule, UsersModule, EmailModule],
   providers: [
     {
       provide: APP_GUARD,
