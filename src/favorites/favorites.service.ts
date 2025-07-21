@@ -9,7 +9,7 @@ export class FavoritesService {
     @InjectModel('Favorites') private readonly favoritesModel: Model<FavoritesResponse>,
   ) { }
 
-  async addFavorite(userId: number, questId: string): Promise<FavoritesResponse> {
+  async addFavorite(userId: string, questId: string): Promise<FavoritesResponse> {
 
     const exists = await this.favoritesModel.findOne({ userId, questId }).exec();
     if (exists) {
@@ -22,23 +22,23 @@ export class FavoritesService {
     });
 
     return {
-      id: createdFavorite._id.toString(),
+      id: createdFavorite.id.toString(),
       userId: createdFavorite.userId,
       questId: createdFavorite.questId,
     };
   }
 
-  async getFavoritesByUser(userId: number): Promise<FavoritesResponse[]> {
+  async getFavoritesByUser(userId: string): Promise<FavoritesResponse[]> {
     const favoriteDocuments = await this.favoritesModel.find({ userId }).exec();
 
     return favoriteDocuments.map((favoriteDocument) => ({
-      id: favoriteDocument._id.toString(),
+      id: favoriteDocument.id.toString(),
       userId: favoriteDocument.userId,
       questId: favoriteDocument.questId,
     }));
   }
 
-  async removeFavorite(id: string): Promise<void> {
-    await this.favoritesModel.findByIdAndDelete(id).exec();
+  async removeFavorite(userId: string, questId: string): Promise<void> {
+    await this.favoritesModel.findOneAndDelete({ userId, questId }).exec();
   }
 }

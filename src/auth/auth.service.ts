@@ -1,15 +1,24 @@
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { SignUpRequest } from './interfaces';
+import { OtpSendRequest, SignInRequest, SignUpRequest } from './interfaces';
 import { SignInResponse } from './interfaces';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from 'src/users/users.service';
+import { SmsService } from 'src/sms/sms.service';
+import { SmsResponse } from 'src/sms/interfaces';
+import { InjectModel } from '@nestjs/mongoose';
+import { Otp, OtpDocument } from 'src/mongo-schemas/otp.schema';
+import { Model } from 'mongoose';
+import { OtpVerifyRequest } from './interfaces';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private smsService: SmsService,
+    @InjectModel(Otp.name)
+    private readonly otpModel: Model<OtpDocument>,
   ) { }
 
   async signUp(data: SignUpRequest): Promise<{ email: string }> {
@@ -45,18 +54,16 @@ export class AuthService {
     return user
   }
 
-  async signIn(user: {
-    email: string;
-    password: string;
-  }): Promise<SignInResponse> {
+  async signIn(user: SignInRequest): Promise<SignInResponse> {
 
     const userData = await this.validatePassword(user.email, user.password)
 
+    const token = this.jwtService.sign({
+      sub: userData.id,
+      role: userData.role,
+    })
     return {
-      access_token: this.jwtService.sign({
-        sub: userData.id,
-        role: userData.role,
-      })
+      access_token: token
     }
   }
 
@@ -94,4 +101,62 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired token')
     }
   }
+
+  async sendOtp(data: OtpSendRequest): Promise<SmsResponse> {
+    const { phone } = data;
+
+
+    const code = Math.floor(100000 + Math.random() * 900000);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    await this.otpModel.create({
+      phone,
+      code,
+      expiresAt,
+      attempts: 0,
+    });
+
+    const message = `Your verification code is: ${code}`;
+    await this.smsService.sendSms(phone, message)
+
+    return { phone };
+  }
+
+  async verifyOtp(data: OtpVerifyRequest): Promise<{ access_token: string }> {
+    const { phone, code } = data;
+
+    const receivedCode = await this.otpModel
+      .findOne({ phone })
+      .sort({ createdAt: -1 });
+
+    if (
+      !receivedCode ||
+      receivedCode.code !== code ||
+      receivedCode.expiresAt < new Date()
+      || receivedCode.attempts >= 3
+    ) {
+      throw new BadRequestException('Invalid OTP');
+    }
+
+    await this.otpModel.deleteOne({ _id: receivedCode._id });
+
+    let user = await this.usersService.getUser({ phone })
+
+    if (!user) {
+      user = await this.usersService.createUser({
+        phone,
+        verify: true,
+      });
+    }
+
+    const access_token = this.jwtService.sign({
+      sub: user.id,
+      role: user.role,
+    })
+
+    return { access_token }
+  }
 }
+
+
+

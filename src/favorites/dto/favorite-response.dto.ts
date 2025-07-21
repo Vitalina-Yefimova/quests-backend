@@ -7,7 +7,7 @@ export class FavoritesResponseDto extends BaseResponseDto<FavoritesResponseDto> 
   id: string;
 
   @IsNumber()
-  userId: number;
+  userId: string;
 
   @IsString()
   questId: string;

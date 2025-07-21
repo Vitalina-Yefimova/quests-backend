@@ -1,20 +1,20 @@
-import { IsEmail, IsNotEmpty, IsString, Matches, MinLength } from "class-validator";
+import { IsBoolean, IsEmail, IsNotEmpty, IsString, Matches, MinLength } from "class-validator";
 import { UsersRequest } from '../interfaces';
 
 export class UsersRequestDto implements UsersRequest {
 
   @IsString()
   @IsNotEmpty()
-  firstName: string;
+  firstName?: string;
 
   @IsString()
   @IsNotEmpty()
-  lastName: string;
+  lastName?: string;
 
   @IsEmail()
   @IsNotEmpty()
   @IsString()
-  email: string;
+  email?: string;
 
   @IsNotEmpty()
   @IsString()
@@ -22,7 +22,7 @@ export class UsersRequestDto implements UsersRequest {
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&+])[A-Za-z\d@$!%*?&+]{8,}$/, {
     message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
   })
-  password: string;
+  password?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -34,4 +34,7 @@ export class UsersRequestDto implements UsersRequest {
   @IsString()
   @IsNotEmpty()
   role: 'USER' | 'ADMIN'
+
+  @IsBoolean()
+  verify?: boolean;
 }

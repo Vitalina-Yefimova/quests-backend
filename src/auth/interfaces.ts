@@ -14,3 +14,12 @@ export interface SignUpRequest {
 export interface SignInResponse {
   access_token: string;
 }
+
+export interface OtpVerifyRequest {
+  phone: string;
+  code: string;
+}
+
+export interface OtpSendRequest {
+  phone: string;
+}

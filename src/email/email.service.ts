@@ -51,8 +51,7 @@ export class EmailService {
     });
 
     return {
-      success: true,
-      message: `Email of type "${type}" sent to ${email}`,
+      success: true
     }
   }
 }

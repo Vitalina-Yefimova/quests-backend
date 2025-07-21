@@ -27,6 +27,7 @@ export class FavoritesController {
     );
 
     return new FavoritesResponseDto(favorites);
+
   }
 
   @Get()
@@ -37,8 +38,11 @@ export class FavoritesController {
     return favorites.map((favorite) => new FavoritesResponseDto(favorite));
   }
 
-  @Delete(':id')
-  async removeFavorite(@Param('id') id: string): Promise<void> {
-    await this.favoritesService.removeFavorite(id);
+  @Delete(':questId')
+  async removeFavorite(
+    @Request() req,
+    @Param('questId') questId: string,
+  ): Promise<void> {
+    await this.favoritesService.removeFavorite(req.user.userId, questId);
   }
 }

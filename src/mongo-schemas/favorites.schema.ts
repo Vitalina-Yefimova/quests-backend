@@ -3,7 +3,7 @@ import { FavoritesResponse } from '../favorites/interfaces';
 
 const favoritesSchema = new Schema<FavoritesResponse>(
   {
-    userId: { type: Number, required: true },
+    userId: { type: String, required: true },
     questId: { type: String, required: true },
   },
   {

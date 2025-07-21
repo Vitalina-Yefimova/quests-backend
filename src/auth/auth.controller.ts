@@ -4,6 +4,10 @@ import { SignUpRequestDto } from './dto/sign-up-request.dto';
 import { SignInRequestDto } from './dto/sign-in-request.dto';
 import { SignInResponseDto } from './dto/sign-in-response.dto';
 import { Public } from 'src/common/decorators/public.decorator';
+import { SmsRequestDto } from 'src/sms/dto/sms-request.dto';
+import { SmsResponseDto } from 'src/sms/dto/sms-response.dto';
+import { OtpVerifyRequestDto } from './dto/otp-verify-request.dto';
+import { OtpSendRequestDto } from './dto/otp-send-request.dto';
 
 
 @Controller('auth')
@@ -30,5 +34,19 @@ export class AuthController {
   async verify(@Headers('authorization') authHeader: string) {
     const token = authHeader?.replace('Bearer ', '');
     return this.authService.verifyEmail(token);
+  }
+
+  @Public()
+  @Post('send-otp')
+  async sendOtp(
+    @Body() dto: OtpSendRequestDto): Promise<SmsResponseDto> {
+    return this.authService.sendOtp(dto)
+  }
+
+  @Public()
+  @Post('verify-otp')
+  async verifyOtp(
+    @Body() dto: OtpVerifyRequestDto) {
+    return this.authService.verifyOtp(dto)
   }
 }

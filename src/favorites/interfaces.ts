@@ -4,6 +4,6 @@ export interface FavoritesRequest {
 
 export interface FavoritesResponse {
   id: string;
-  userId: number;
+  userId: string;
   questId: string;
 }

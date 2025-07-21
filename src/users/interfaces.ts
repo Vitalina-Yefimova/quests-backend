@@ -1,8 +1,8 @@
 export interface UsersRequest {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  password?: string;
   phone: string;
   verify?: boolean;
 }

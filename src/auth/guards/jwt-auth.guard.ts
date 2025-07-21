@@ -22,13 +22,21 @@ export class JwtAuthGuard implements CanActivate {
     if (isPublic) return true;
 
     const request = context.switchToHttp().getRequest();
-    const authHeader = request.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('No token provided');
+    let token: string | undefined;
+
+    const authHeader = request.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
     }
 
-    const token = authHeader.split(' ')[1];
+    if (!token && request.cookies?.access_token) {
+      token = request.cookies.access_token;
+    }
+
+    if (!token) {
+      throw new UnauthorizedException('No token provided');
+    }
 
     try {
       const payload = await this.jwtService.verifyAsync(token, {
