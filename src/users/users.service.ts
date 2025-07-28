@@ -25,23 +25,22 @@ export class UsersService {
     phone?: string;
     password?: string;
     verify?: boolean;
+    isHashedPassword?: boolean
   }) {
+    const updateData: any = {};
 
-    const updateData = {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      phone: data.phone,
-      verify: data.verify
-    };
-
-    if (data.verify !== undefined) {
-      updateData.verify = data.verify;
-    }
+    if (data.firstName !== undefined) updateData.firstName = data.firstName;
+    if (data.lastName !== undefined) updateData.lastName = data.lastName;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.verify !== undefined) updateData.verify = data.verify;
 
     if (data.password) {
-      updateData['password'] = await bcrypt.hash(data.password, 10);
+      updateData.password = data.isHashedPassword
+        ? data.password
+        : await bcrypt.hash(data.password, 10);
     }
 
     return this.usersData.updateUser(id, updateData);
   }
+
 }

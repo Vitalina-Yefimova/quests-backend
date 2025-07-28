@@ -8,6 +8,7 @@ import {
   Query,
   Request,
   ParseIntPipe,
+  Delete
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { OrdersRequestDto } from './dto/orders-request.dto';
@@ -16,6 +17,7 @@ import { OrdersResponseDto } from './dto/orders-response.dto';
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) { }
+
 
   @Post()
   async create(@Request() req, @Body() dto: OrdersRequestDto) {
@@ -55,12 +57,18 @@ export class OrdersController {
   async update(
     @Request() req,
     @Param('id', ParseIntPipe) id: number,
-    @Body() data: { date: Date; participants: number },
+    @Body() data: { date: string; participants: number },
   ) {
     const updated = await this.ordersService.update(
       id,
       req.user.userId,
       data);
     return new OrdersResponseDto(updated);
+  }
+
+  @Delete(':id')
+  async delete(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    await this.ordersService.delete(id, req.user.userId);
+    return { success: true };
   }
 }

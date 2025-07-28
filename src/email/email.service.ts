@@ -35,6 +35,10 @@ export class EmailService {
         subject: 'Please verify your email',
         html: `<p>Click the link to verify your account: <a href="${url}">Verify Email</a></p>`,
       },
+      reset: {
+        subject: 'Reset your password',
+        html: `<p>Click to reset your password: <a href="${url}">Reset Password</a><p>`,
+      }
     };
 
     const template = templates[type]

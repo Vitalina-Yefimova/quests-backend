@@ -156,6 +156,28 @@ export class AuthService {
 
     return { access_token }
   }
+
+  async resetPassword(token: string, newPassword: string) {
+    try {
+      const payload = this.jwtService.verify(token);
+      if (payload.type !== 'reset') {
+        throw new BadRequestException('Invalid token type');
+      }
+
+      const user = await this.usersService.getUser({ id: payload.sub });
+      if (!user) throw new BadRequestException('User not found');
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await this.usersService.updateUser(user.id, {
+        password: hashedPassword,
+        isHashedPassword: true,
+      });
+
+      return { message: 'Password updated successfully' };
+    } catch {
+      throw new BadRequestException('Invalid or expired token');
+    }
+  }
 }
 
 

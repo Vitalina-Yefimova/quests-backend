@@ -28,10 +28,20 @@ export class OrdersDataService {
   }
 
   async findOrders(where: any): Promise<OrdersResponse[]> {
-    return this.prisma.orders.findMany({
+    const orders = await this.prisma.orders.findMany({
       where,
       orderBy: { createdAt: 'desc' },
     });
+
+    return Promise.all(
+      orders.map(async (order) => {
+        const quest = await this.questsModel.findById(order.questId);
+        return {
+          ...order,
+          questTitle: quest?.title || 'Unknown Quest',
+        };
+      }),
+    );
   }
 
   async findById(id: number): Promise<OrdersResponse | null> {
@@ -40,10 +50,17 @@ export class OrdersDataService {
     });
   }
 
-  async update(id: number, data: { date: Date; participants: number }): Promise<OrdersResponse> {
+  async update(
+    id: number,
+    data: { date: Date; participants: number },
+  ): Promise<OrdersResponse> {
     return this.prisma.orders.update({
       where: { id },
       data,
     });
+  }
+
+  async delete(id: number): Promise<void> {
+    await this.prisma.orders.delete({ where: { id } });
   }
 }

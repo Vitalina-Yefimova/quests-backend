@@ -2,6 +2,7 @@ import { Controller, Get, Patch, Param, Body, ParseIntPipe } from '@nestjs/commo
 import { UsersService } from './users.service';
 import { UsersResponseDto } from './dto/users-response.dto';
 import { UsersRequestDto } from './dto/users-request.dto';
+import * as bcrypt from 'bcrypt';
 
 @Controller('users')
 export class UsersController {
@@ -20,9 +21,11 @@ export class UsersController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: Partial<Pick<UsersRequestDto, 'firstName' | 'lastName' | 'phone' | 'password'>>,
   ) {
-    const updatedUser = await this.usersService.updateUser(id, {
-      ...dto,
-    });
+    if (dto.password) {
+      dto.password = await bcrypt.hash(dto.password, 10);
+    }
+
+    const updatedUser = await this.usersService.updateUser(id, dto);
     return new UsersResponseDto(updatedUser);
   }
 }
