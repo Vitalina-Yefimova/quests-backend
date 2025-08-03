@@ -1,4 +1,4 @@
-import { IsEmail, IsString } from "class-validator";
+import { IsEmail, IsObject, IsOptional, IsString } from "class-validator";
 import { EmailRequest } from "../interfaces";
 
 export class EmailRequestDto implements EmailRequest {
@@ -6,9 +6,16 @@ export class EmailRequestDto implements EmailRequest {
   @IsEmail()
   email: string;
 
+  @IsOptional()
   @IsString()
-  frontendUrl: string;
+  body: string;
 
-  @IsString()
-  type: string;
+  @IsObject()
+  metadata: {
+    frontendUrl?: string;
+    type: string;
+    subject: string;
+    template: string;
+    [key: string]: any;
+  }
 }

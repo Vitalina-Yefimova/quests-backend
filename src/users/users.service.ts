@@ -19,28 +19,29 @@ export class UsersService {
     return this.usersData.createUser(user);
   }
 
-  async updateUser(id: number, data: {
-    firstName?: string;
-    lastName?: string;
-    phone?: string;
-    password?: string;
-    verify?: boolean;
-    isHashedPassword?: boolean
-  }) {
-    const updateData: any = {};
+  async updateUser(id: number, data: Partial<Pick<UsersRequest, 'firstName' | 'lastName' | 'phone' | 'password' | 'verify'> & { oldPassword?: string }>) {
 
-    if (data.firstName !== undefined) updateData.firstName = data.firstName;
-    if (data.lastName !== undefined) updateData.lastName = data.lastName;
-    if (data.phone !== undefined) updateData.phone = data.phone;
-    if (data.verify !== undefined) updateData.verify = data.verify;
+    const { oldPassword, ...updateData } = data;
+    const finalUpdateData = { ...updateData };
 
-    if (data.password) {
-      updateData.password = data.isHashedPassword
-        ? data.password
-        : await bcrypt.hash(data.password, 10);
+    if (updateData.password) {
+
+      if (oldPassword) {
+        const user = await this.getUser({ id });
+        if (!user) {
+          throw new Error('User not found');
+        }
+
+        const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
+
+        if (!isOldPasswordValid) {
+          throw new Error('Old password is incorrect');
+        }
+      }
+
+      finalUpdateData.password = await bcrypt.hash(updateData.password, 10);
     }
 
-    return this.usersData.updateUser(id, updateData);
+    return this.usersData.updateUser(id, finalUpdateData);
   }
-
 }

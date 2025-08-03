@@ -4,10 +4,10 @@ import { SignUpRequestDto } from './dto/sign-up-request.dto';
 import { SignInRequestDto } from './dto/sign-in-request.dto';
 import { SignInResponseDto } from './dto/sign-in-response.dto';
 import { Public } from 'src/common/decorators/public.decorator';
-import { SmsRequestDto } from 'src/sms/dto/sms-request.dto';
 import { SmsResponseDto } from 'src/sms/dto/sms-response.dto';
 import { OtpVerifyRequestDto } from './dto/otp-verify-request.dto';
 import { OtpSendRequestDto } from './dto/otp-send-request.dto';
+import { SendResetPasswordEmailDto } from './dto/send-reset-password-email.dto';
 
 
 @Controller('auth')
@@ -54,5 +54,11 @@ export class AuthController {
   @Post('reset-password')
   async resetPassword(@Body() body: { token: string; password: string }) {
     return this.authService.resetPassword(body.token, body.password)
+  }
+
+  @Public()
+  @Post('send-reset-password-email')
+  async sendResetPasswordEmail(@Body() dto: SendResetPasswordEmailDto) {
+    return this.authService.sendResetPasswordEmail(dto.email, dto.frontendUrl)
   }
 }

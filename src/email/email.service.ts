@@ -3,6 +3,9 @@ import * as sgMail from '@sendgrid/mail';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
 import { EmailRequest, EmailResponse } from './interfaces';
+import { join } from 'path';
+import { readFileSync } from 'fs';
+import * as handlebars from 'handlebars';
 
 @Injectable()
 export class EmailService {
@@ -15,47 +18,31 @@ export class EmailService {
 
   async sendEmail(data: EmailRequest): Promise<EmailResponse> {
 
-    const { email, frontendUrl, type } = data;
+    const { email, metadata, body } = data;
+    const { template, subject, ...rest } = metadata;
 
-    const user = await this.usersService.getUser({ email });
-
-    if (!user) {
-      throw new BadRequestException('User not found')
+    if (!template || !subject) {
+      throw new BadRequestException('Template and subject must be provided in metadata')
     }
 
-    const token = this.jwtService.sign({
-      sub: user.id,
-      type,
-    })
-
-    const url = `${frontendUrl}?token=${token}`;
-
-    const templates = {
-      verify: {
-        subject: 'Please verify your email',
-        html: `<p>Click the link to verify your account: <a href="${url}">Verify Email</a></p>`,
-      },
-      reset: {
-        subject: 'Reset your password',
-        html: `<p>Click to reset your password: <a href="${url}">Reset Password</a><p>`,
-      }
-    };
-
-    const template = templates[type]
-
-    if (!template) {
-      throw new BadRequestException('Unsupported email type')
-    }
+    const html = this.renderTemplate(template, { ...rest, body });
 
     await sgMail.send({
       to: email,
       from: 'escape_room@meta.ua',
-      subject: template.subject,
-      html: template.html,
+      subject,
+      html,
     });
 
     return {
       success: true
     }
+  }
+
+  private renderTemplate(templateName: string, data: Record<string, any>): string {
+    const filePath = join(__dirname, 'templates', `${templateName}.hbs`);
+    const source = readFileSync(filePath, 'utf-8');
+    const compiled = handlebars.compile(source);
+    return compiled(data);
   }
 }

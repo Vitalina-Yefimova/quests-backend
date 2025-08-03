@@ -29,4 +29,8 @@ export class SignUpRequestDto implements SignUpRequest {
     message: 'Phone number must be a valid phone number'
   })
   phone: string;
+
+  @IsString()
+  @IsNotEmpty()
+  frontendUrl: string;
 }

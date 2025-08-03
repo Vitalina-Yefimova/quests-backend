@@ -10,6 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Otp, OtpDocument } from 'src/mongo-schemas/otp.schema';
 import { Model } from 'mongoose';
 import { OtpVerifyRequest } from './interfaces';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private smsService: SmsService,
+    private emailService: EmailService,
     @InjectModel(Otp.name)
     private readonly otpModel: Model<OtpDocument>,
   ) { }
@@ -41,6 +43,22 @@ export class AuthService {
       password: hashedPassword,
     });
 
+    const token = this.jwtService.sign({
+      sub: user.id,
+      type: 'verify',
+    })
+
+    await this.emailService.sendEmail({
+      email: user.email,
+      metadata: {
+        template: 'verify',
+        subject: 'Verify your email',
+        frontendUrl: data.frontendUrl,
+        type: 'verify',
+        token,
+      },
+    })
+
     return { email: user.email }
   }
 
@@ -50,7 +68,6 @@ export class AuthService {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Invalid credentials')
     }
-
     return user
   }
 
@@ -157,20 +174,42 @@ export class AuthService {
     return { access_token }
   }
 
+  async sendResetPasswordEmail(email: string, frontendUrl: string) {
+    const user = await this.usersService.getUser({ email })
+
+    if (!user) {
+      throw new BadRequestException('User not found')
+    }
+
+    const token = this.jwtService.sign({
+      sub: user.id,
+      type: 'reset-password',
+    })
+
+    await this.emailService.sendEmail({
+      email: user.email,
+      metadata: {
+        template: 'reset-password',
+        subject: 'Reset your password',
+        frontendUrl,
+        type: 'reset-password',
+        token,
+      },
+    })
+  }
+
   async resetPassword(token: string, newPassword: string) {
     try {
       const payload = this.jwtService.verify(token);
-      if (payload.type !== 'reset') {
+      if (payload.type !== 'reset-password') {
         throw new BadRequestException('Invalid token type');
       }
 
       const user = await this.usersService.getUser({ id: payload.sub });
       if (!user) throw new BadRequestException('User not found');
 
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
       await this.usersService.updateUser(user.id, {
-        password: hashedPassword,
-        isHashedPassword: true,
+        password: newPassword,
       });
 
       return { message: 'Password updated successfully' };

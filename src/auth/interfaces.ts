@@ -9,6 +9,7 @@ export interface SignUpRequest {
   email: string;
   password: string;
   phone: string;
+  frontendUrl: string;
 }
 
 export interface SignInResponse {

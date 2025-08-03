@@ -1,7 +1,13 @@
 export interface EmailRequest {
   email: string;
-  frontendUrl: string;
-  type: string;
+  body?: string;
+  metadata: {
+    frontendUrl?: string;
+    type: string;
+    subject: string;
+    template: string;
+    [key: string]: any;
+  }
 }
 export interface EmailResponse {
   success: boolean;
