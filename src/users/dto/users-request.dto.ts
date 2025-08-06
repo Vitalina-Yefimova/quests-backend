@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsNotEmpty, IsString, Matches, MinLength } from "class-validator";
+import { IsBoolean, IsEmail, IsNotEmpty, IsString, Matches, MinLength, IsEnum } from "class-validator";
 import { UsersRequest } from '../interfaces';
 
 export class UsersRequestDto implements UsersRequest {
@@ -37,4 +37,13 @@ export class UsersRequestDto implements UsersRequest {
 
   @IsBoolean()
   verify?: boolean;
+
+  @IsBoolean()
+  emailVerified?: boolean;
+
+  @IsString()
+  newEmail?: string
+
+  @IsEnum(['email', 'phone'])
+  authMethod: 'email' | 'phone';
 }

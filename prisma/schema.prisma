@@ -18,11 +18,14 @@ model Users {
   firstName  String?
   lastName   String?
   email      String?
+  newEmail   String? @unique
+  emailVerified Boolean @default(false)
   password   String?
   phone      String  @unique
   role       Role    @default(USER)
   orders     Orders[]
   verify     Boolean @default(false)
+  authMethod String?
 
   @@unique([email])
 }

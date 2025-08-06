@@ -5,9 +5,10 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersDataService } from './users-data.service';
 import { OrdersModule } from '../orders/orders.module';
 import { FavoritesModule } from '../favorites/favorites.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
-  imports: [OrdersModule, FavoritesModule],
+  imports: [OrdersModule, FavoritesModule, JwtModule.register({})],
   providers: [UsersService, UsersDataService, PrismaService],
   controllers: [UsersController],
   exports: [UsersService]

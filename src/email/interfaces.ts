@@ -3,7 +3,6 @@ export interface EmailRequest {
   body?: string;
   metadata: {
     frontendUrl?: string;
-    type: string;
     subject: string;
     template: string;
     [key: string]: any;

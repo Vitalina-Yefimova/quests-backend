@@ -41,12 +41,16 @@ export class AuthService {
       email: data.email,
       phone: data.phone,
       password: hashedPassword,
+      authMethod: 'email'
     });
 
     const token = this.jwtService.sign({
       sub: user.id,
       type: 'verify',
-    })
+    },
+      {
+        expiresIn: '1h',
+      })
 
     await this.emailService.sendEmail({
       email: user.email,
@@ -106,6 +110,7 @@ export class AuthService {
 
       await this.usersService.updateUser(userId, {
         verify: true,
+        emailVerified: true
       })
 
       return {
@@ -163,6 +168,7 @@ export class AuthService {
       user = await this.usersService.createUser({
         phone,
         verify: true,
+        authMethod: 'phone',
       });
     }
 
@@ -192,7 +198,6 @@ export class AuthService {
         template: 'reset-password',
         subject: 'Reset your password',
         frontendUrl,
-        type: 'reset-password',
         token,
       },
     })
@@ -205,19 +210,64 @@ export class AuthService {
         throw new BadRequestException('Invalid token type');
       }
 
-      const user = await this.usersService.getUser({ id: payload.sub });
-      if (!user) throw new BadRequestException('User not found');
-
-      await this.usersService.updateUser(user.id, {
+      return await this.usersService.updateUser(payload.sub, {
         password: newPassword,
-      });
-
-      return { message: 'Password updated successfully' };
+      }, token);
     } catch {
       throw new BadRequestException('Invalid or expired token');
     }
   }
+
+  async changeEmail(token: string, newEmail: string, frontendUrl: string) {
+
+    const payload = this.jwtService.verify(token);
+    const userId = payload.sub;
+
+    const existing = await this.usersService.getUser({ email: newEmail });
+
+    if (existing) {
+      throw new BadRequestException('Email already in use');
+    }
+
+    await this.usersService.updateUser(userId, { newEmail })
+
+    const verifyToken = this.jwtService.sign({
+      type: 'verify-email',
+      sub: userId,
+    });
+
+    await this.emailService.sendEmail({
+      email: newEmail,
+      metadata: {
+        template: 'verify-new-email',
+        subject: 'Verify your new email',
+        frontendUrl,
+        token: verifyToken,
+      },
+    });
+
+    return { message: 'Verification email sent to new address' };
+  }
+
+  async verifyNewEmail(token: string) {
+    try {
+      const payload = this.jwtService.verify(token);
+
+      if (payload.type !== 'verify-email') {
+        throw new BadRequestException('Invalid token type')
+      }
+
+      const user = await this.usersService.getUser({ id: payload.sub })
+      if (!user || !user.newEmail) {
+        throw new BadRequestException('No new email to verify')
+      }
+
+      return this.usersService.updateUser(user.id, {
+        email: user.newEmail,
+        emailVerified: true,
+      }, token)
+    } catch {
+      throw new BadRequestException('Invalid or expired token')
+    }
+  }
 }
-
-
-

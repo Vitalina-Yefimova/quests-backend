@@ -8,6 +8,8 @@ export class UsersResponseDto extends BaseResponseDto<UsersResponseDto> implemen
   email: string;
   role: 'USER' | 'ADMIN';
   verify: boolean;
+  emailVerified: boolean;
+  hasPassword?: boolean
 
   constructor(data: UsersResponse) {
     super(data)

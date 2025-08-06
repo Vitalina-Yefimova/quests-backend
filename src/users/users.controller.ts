@@ -1,8 +1,7 @@
-import { Controller, Get, Patch, Param, Body, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Body, ParseIntPipe, Headers } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersResponseDto } from './dto/users-response.dto';
 import { UsersRequestDto } from './dto/users-request.dto';
-import * as bcrypt from 'bcrypt';
 
 @Controller('users')
 export class UsersController {
@@ -13,19 +12,20 @@ export class UsersController {
   @Get(':id')
   async getUser(@Param('id', ParseIntPipe) id: number) {
     const user = await this.usersService.getUser({ id });
-    return new UsersResponseDto(user)
+    return new UsersResponseDto({
+      ...user,
+      hasPassword: !!user.password
+    })
   }
 
   @Patch(':id')
   async updateUser(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: Partial<Pick<UsersRequestDto, 'firstName' | 'lastName' | 'phone' | 'password'>>,
+    @Body() dto: Partial<Pick<UsersRequestDto, 'firstName' | 'lastName' | 'phone' | 'password' | 'email'> & { oldPassword?: string }>,
+    @Headers('authorization') authHeader?: string,
   ) {
-    if (dto.password) {
-      dto.password = await bcrypt.hash(dto.password, 10);
-    }
-
-    const updatedUser = await this.usersService.updateUser(id, dto);
+    const token = authHeader?.replace('Bearer ', '')
+    const updatedUser = await this.usersService.updateUser(id, dto, token);
     return new UsersResponseDto(updatedUser);
   }
 }

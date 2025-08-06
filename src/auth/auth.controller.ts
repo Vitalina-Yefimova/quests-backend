@@ -8,6 +8,7 @@ import { SmsResponseDto } from 'src/sms/dto/sms-response.dto';
 import { OtpVerifyRequestDto } from './dto/otp-verify-request.dto';
 import { OtpSendRequestDto } from './dto/otp-send-request.dto';
 import { SendResetPasswordEmailDto } from './dto/send-reset-password-email.dto';
+import { EmailChangeRequestDto } from './dto/email-change-request.dto';
 
 
 @Controller('auth')
@@ -31,8 +32,7 @@ export class AuthController {
 
   @Public()
   @Post('verify')
-  async verify(@Headers('authorization') authHeader: string) {
-    const token = authHeader?.replace('Bearer ', '');
+  async verify(@Body('token') token: string) {
     return this.authService.verifyEmail(token);
   }
 
@@ -53,12 +53,32 @@ export class AuthController {
   @Public()
   @Post('reset-password')
   async resetPassword(@Body() body: { token: string; password: string }) {
-    return this.authService.resetPassword(body.token, body.password)
+    return this.authService.resetPassword(
+      body.token,
+      body.password)
   }
 
   @Public()
   @Post('send-reset-password-email')
   async sendResetPasswordEmail(@Body() dto: SendResetPasswordEmailDto) {
-    return this.authService.sendResetPasswordEmail(dto.email, dto.frontendUrl)
+    return this.authService.sendResetPasswordEmail(
+      dto.email,
+      dto.frontendUrl)
+  }
+
+  @Post('change-email')
+  async changeEmail(
+    @Headers('authorization') authHeader: string,
+    @Body() dto: EmailChangeRequestDto
+  ) {
+    const token = authHeader?.replace('Bearer ', '')
+    return this.authService.changeEmail(token, dto.newEmail, dto.frontendUrl)
+  }
+
+  @Public()
+  @Post('verify-new-email')
+  async verifyNewEmail(@Headers('authorization') authHeader: string) {
+    const token = authHeader?.replace('Bearer ', '');
+    return this.authService.verifyNewEmail(token);
   }
 }

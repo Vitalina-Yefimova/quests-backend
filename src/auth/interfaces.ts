@@ -24,3 +24,8 @@ export interface OtpVerifyRequest {
 export interface OtpSendRequest {
   phone: string;
 }
+
+export interface EmailChangeRequest {
+  newEmail: string;
+  frontendUrl: string;
+}

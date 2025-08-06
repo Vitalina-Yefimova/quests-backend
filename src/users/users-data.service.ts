@@ -28,6 +28,9 @@ export class UsersDataService {
         password: true,
         role: true,
         verify: true,
+        emailVerified: true,
+        newEmail: true,
+        authMethod: true
       },
     });
   }
@@ -37,7 +40,7 @@ export class UsersDataService {
   }
 
   async updateUser(id: number, data: Partial<Pick<UsersRequest,
-    'firstName' | 'phone' | 'password' | 'lastName' | 'verify'>>) {
+    'firstName' | 'phone' | 'password' | 'lastName' | 'verify' | 'emailVerified' | 'email' | 'newEmail'>>) {
     return this.prisma.users.update({
       where: { id },
       data,
@@ -47,8 +50,11 @@ export class UsersDataService {
         lastName: true,
         email: true,
         phone: true,
-        role: true,
         verify: true,
+        emailVerified: true,
+        newEmail: true,
+        role: true,
+        authMethod: true
       },
     });
   }

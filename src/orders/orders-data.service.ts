@@ -39,6 +39,7 @@ export class OrdersDataService {
         return {
           ...order,
           questTitle: quest?.title || 'Unknown Quest',
+          questId: order.questId
         };
       }),
     );
