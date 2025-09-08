@@ -229,7 +229,7 @@ export class AuthService {
       throw new BadRequestException('Email already in use');
     }
 
-    await this.usersService.updateUser({ newEmail })
+    await this.usersService.updateUser({ newEmail }, token)
 
     const verifyToken = this.jwtService.sign({
       type: 'verify-email',
