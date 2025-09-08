@@ -23,7 +23,7 @@ export class QuestsController {
 
   @Public()
   @Get(':id')
-  async getOneQuest(@Param('id') id: string): Promise<QuestsResponseDto> {
+  async getQuestById(@Param('id') id: string): Promise<QuestsResponseDto> {
     const quest = await this.questsService.findOne(id);
     return new QuestsResponseDto(quest);
   }

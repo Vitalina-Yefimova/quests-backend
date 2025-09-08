@@ -24,7 +24,7 @@ export class AuthService {
   ) { }
 
   async signUp(data: SignUpRequest): Promise<{ email: string }> {
-    const existingUser = await this.usersService.getUser({
+    const existingUser = await this.usersService.findUser({
       email: data.email,
       phone: data.phone,
     })
@@ -67,7 +67,7 @@ export class AuthService {
   }
 
   async validatePassword(email: string, password: string): Promise<{ id: number, role: string }> {
-    const user = await this.usersService.getUser({ email })
+    const user = await this.usersService.findUser({ email })
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Invalid credentials')
@@ -97,7 +97,7 @@ export class AuthService {
       }
 
       const userId = payload.sub;
-      const user = await this.usersService.getUser({ id: userId });
+      const user = await this.usersService.findUser({ id: userId });
 
       if (!user) {
         throw new BadRequestException('User not found');
@@ -108,7 +108,7 @@ export class AuthService {
         }
       }
 
-      await this.usersService.updateUser(userId, {
+      await this.usersService.updateUser({
         verify: true,
         emailVerified: true
       })
@@ -162,7 +162,7 @@ export class AuthService {
 
     await this.otpModel.deleteOne({ _id: receivedCode._id });
 
-    let user = await this.usersService.getUser({ phone })
+    let user = await this.usersService.findUser({ phone })
 
     if (!user) {
       user = await this.usersService.createUser({
@@ -181,7 +181,7 @@ export class AuthService {
   }
 
   async sendResetPasswordEmail(email: string, frontendUrl: string) {
-    const user = await this.usersService.getUser({ email })
+    const user = await this.usersService.findUser({ email })
 
     if (!user) {
       throw new BadRequestException('User not found')
@@ -210,7 +210,7 @@ export class AuthService {
         throw new BadRequestException('Invalid token type');
       }
 
-      return await this.usersService.updateUser(payload.sub, {
+      return await this.usersService.updateUser({
         password: newPassword,
       }, token);
     } catch {
@@ -223,13 +223,13 @@ export class AuthService {
     const payload = this.jwtService.verify(token);
     const userId = payload.sub;
 
-    const existing = await this.usersService.getUser({ email: newEmail });
+    const existing = await this.usersService.findUser({ email: newEmail });
 
     if (existing) {
       throw new BadRequestException('Email already in use');
     }
 
-    await this.usersService.updateUser(userId, { newEmail })
+    await this.usersService.updateUser({ newEmail })
 
     const verifyToken = this.jwtService.sign({
       type: 'verify-email',
@@ -257,12 +257,12 @@ export class AuthService {
         throw new BadRequestException('Invalid token type')
       }
 
-      const user = await this.usersService.getUser({ id: payload.sub })
+      const user = await this.usersService.findUser({ id: payload.sub })
       if (!user || !user.newEmail) {
         throw new BadRequestException('No new email to verify')
       }
 
-      return this.usersService.updateUser(user.id, {
+      return this.usersService.updateUser({
         email: user.newEmail,
         emailVerified: true,
       }, token)

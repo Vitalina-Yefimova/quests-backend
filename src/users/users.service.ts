@@ -10,7 +10,12 @@ export class UsersService {
     private readonly jwtService: JwtService,
   ) { }
 
-  async getUser(where: {
+  async getUser(token: string) {
+    const id = this.getUserIdFromToken(token);
+    return this.usersData.getUser({ id });
+  }
+
+  async findUser(where: {
     id?: number;
     email?: string;
     phone?: string
@@ -18,13 +23,29 @@ export class UsersService {
     return this.usersData.getUser(where);
   }
 
+
+  private getUserIdFromToken(token: string): number {
+    if (!token) {
+      throw new UnauthorizedException('Token is required');
+    }
+
+    try {
+      const payload = this.jwtService.verify(token, {
+        secret: process.env.JWT_SECRET,
+      });
+      return payload.sub;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid token');
+    }
+  }
+
   async createUser(user: UsersRequest) {
     return this.usersData.createUser(user);
   }
 
-  async updateUser(id: number, data: Partial<Pick<UsersRequest, 'firstName' | 'lastName' | 'phone' | 'password' | 'email' | 'verify' | 'newEmail' | 'emailVerified'> & { oldPassword?: string }>, token?: string) {
+  async updateUser(data: Partial<Pick<UsersRequest, 'firstName' | 'lastName' | 'phone' | 'password' | 'email' | 'verify' | 'newEmail' | 'emailVerified'> & { oldPassword?: string }>, token?: string) {
 
-    const user = await this.getUser({ id });
+    const user = await this.getUser(token);
     if (!user)
       throw new Error('User not found');
 
@@ -91,6 +112,6 @@ export class UsersService {
     if (updateData.verify !== undefined) finalUpdateData.verify = updateData.verify;
     if (updateData.emailVerified !== undefined) finalUpdateData.emailVerified = updateData.emailVerified;
 
-    return this.usersData.updateUser(id, finalUpdateData);
+    return this.usersData.updateUser(user.id, finalUpdateData);
   }
 }
