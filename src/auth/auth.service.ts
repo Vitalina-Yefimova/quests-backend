@@ -24,14 +24,6 @@ export class AuthService {
   ) { }
 
   async signUp(data: SignUpRequest): Promise<{ email: string }> {
-    const existingUser = await this.usersService.findUser({
-      email: data.email,
-      phone: data.phone,
-    })
-
-    if (existingUser) {
-      throw new BadRequestException('User already exists');
-    }
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
@@ -47,10 +39,10 @@ export class AuthService {
     const token = this.jwtService.sign({
       sub: user.id,
       type: 'verify',
-    },
-      {
-        expiresIn: '1h',
-      })
+    }, {
+      secret: process.env.JWT_SECRET,
+      expiresIn: '1h',
+    })
 
     await this.emailService.sendEmail({
       email: user.email,
@@ -65,12 +57,14 @@ export class AuthService {
 
     return { email: user.email }
   }
-
   async validatePassword(email: string, password: string): Promise<{ id: number, role: string }> {
-    const user = await this.usersService.findUser({ email })
+    const user = await this.usersService.getUserByEmail(email)
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Invalid credentials')
+    }
+    if (!user.verify) {
+      throw new UnauthorizedException('Email not verified')
     }
     return user
   }
@@ -90,43 +84,27 @@ export class AuthService {
 
   async verifyEmail(token: string) {
     try {
-      const payload = this.jwtService.verify(token);
+      const payload = this.jwtService.verify(token, { secret: process.env.JWT_SECRET });
+      if (payload.type !== 'verify') throw new BadRequestException('Invalid token type');
 
-      if (payload.type !== 'verify') {
-        throw new BadRequestException('Invalid token type');
-      }
+      await this.usersService.updateUser({ verify: true, emailVerified: true }, token);
 
-      const userId = payload.sub;
-      const user = await this.usersService.findUser({ id: userId });
+      const user = await this.usersService.getUser(token);
 
-      if (!user) {
-        throw new BadRequestException('User not found');
-      }
-      if (user.verify) {
-        return {
-          message: 'Email already verified'
-        }
-      }
+      const access_token = this.jwtService.sign(
+        { sub: user.id, role: user.role },
+        { secret: process.env.JWT_SECRET }
+      );
 
-      await this.usersService.updateUser({
-        verify: true,
-        emailVerified: true
-      })
-
-      return {
-        access_token: this.jwtService.sign({
-          sub: user.id,
-          role: user.role,
-        }),
-      };
-    } catch (error) {
-      throw new BadRequestException('Invalid or expired token')
+      return { access_token };
+    } catch {
+      throw new BadRequestException('Invalid or expired token');
     }
   }
 
+
   async sendOtp(data: OtpSendRequest): Promise<SmsResponse> {
     const { phone } = data;
-
 
     const code = Math.floor(100000 + Math.random() * 900000);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
@@ -153,16 +131,16 @@ export class AuthService {
 
     if (
       !receivedCode ||
-      receivedCode.code !== code ||
+      receivedCode.code !== (code as number) ||
       receivedCode.expiresAt < new Date()
       || receivedCode.attempts >= 3
     ) {
       throw new BadRequestException('Invalid OTP');
     }
 
-    await this.otpModel.deleteOne({ _id: receivedCode._id });
+    await this.otpModel.deleteOne({ id: receivedCode.id });
 
-    let user = await this.usersService.findUser({ phone })
+    let user = await this.usersService.getUser(phone)
 
     if (!user) {
       user = await this.usersService.createUser({
@@ -181,7 +159,7 @@ export class AuthService {
   }
 
   async sendResetPasswordEmail(email: string, frontendUrl: string) {
-    const user = await this.usersService.findUser({ email })
+    const user = await this.usersService.getUserByEmail(email)
 
     if (!user) {
       throw new BadRequestException('User not found')
@@ -205,7 +183,7 @@ export class AuthService {
 
   async resetPassword(token: string, newPassword: string) {
     try {
-      const payload = this.jwtService.verify(token);
+      const payload = this.jwtService.verify(token, { secret: process.env.JWT_SECRET });
       if (payload.type !== 'reset-password') {
         throw new BadRequestException('Invalid token type');
       }
@@ -222,12 +200,6 @@ export class AuthService {
 
     const payload = this.jwtService.verify(token);
     const userId = payload.sub;
-
-    const existing = await this.usersService.findUser({ email: newEmail });
-
-    if (existing) {
-      throw new BadRequestException('Email already in use');
-    }
 
     await this.usersService.updateUser({ newEmail }, token)
 
@@ -257,7 +229,7 @@ export class AuthService {
         throw new BadRequestException('Invalid token type')
       }
 
-      const user = await this.usersService.findUser({ id: payload.sub })
+      const user = await this.usersService.getUser(payload.sub)
       if (!user || !user.newEmail) {
         throw new BadRequestException('No new email to verify')
       }

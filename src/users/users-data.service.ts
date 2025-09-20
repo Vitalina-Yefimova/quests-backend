@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersRequest } from './interfaces';
 
@@ -36,26 +36,40 @@ export class UsersDataService {
   }
 
   async createUser(user: UsersRequest) {
-    return this.prisma.users.create({ data: user })
+    try {
+      return this.prisma.users.create({ data: user })
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new BadRequestException('Invalid registration data');
+      }
+      throw error;
+    }
   }
 
   async updateUser(id: number, data: Partial<Pick<UsersRequest,
     'firstName' | 'phone' | 'password' | 'lastName' | 'verify' | 'emailVerified' | 'email' | 'newEmail'>>) {
-    return this.prisma.users.update({
-      where: { id },
-      data,
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        verify: true,
-        emailVerified: true,
-        newEmail: true,
-        role: true,
-        authMethod: true
-      },
-    });
+    try {
+      return this.prisma.users.update({
+        where: { id },
+        data,
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          verify: true,
+          emailVerified: true,
+          newEmail: true,
+          role: true,
+          authMethod: true
+        },
+      });
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new BadRequestException('Invalid registration data');
+      }
+      throw error;
+    }
   }
 }

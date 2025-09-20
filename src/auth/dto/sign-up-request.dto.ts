@@ -25,8 +25,8 @@ export class SignUpRequestDto implements SignUpRequest {
 
   @IsString()
   @IsNotEmpty()
-  @Matches(/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/, {
-    message: 'Phone number must be a valid phone number'
+  @Matches(/^\+1[0-9]{10}$/, {
+    message: 'Phone number must be valid'
   })
   phone: string;
 

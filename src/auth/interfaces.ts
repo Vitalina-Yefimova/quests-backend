@@ -18,7 +18,7 @@ export interface SignInResponse {
 
 export interface OtpVerifyRequest {
   phone: string;
-  code: string;
+  code: number;
 }
 
 export interface OtpSendRequest {

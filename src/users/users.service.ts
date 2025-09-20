@@ -15,15 +15,6 @@ export class UsersService {
     return this.usersData.getUser({ id });
   }
 
-  async findUser(where: {
-    id?: number;
-    email?: string;
-    phone?: string
-  }) {
-    return this.usersData.getUser(where);
-  }
-
-
   private getUserIdFromToken(token: string): number {
     if (!token) {
       throw new UnauthorizedException('Token is required');
@@ -37,6 +28,14 @@ export class UsersService {
     } catch (error) {
       throw new UnauthorizedException('Invalid token');
     }
+  }
+
+  async getUserByEmail(email: string) {
+    return this.usersData.getUser({ email });
+  }
+
+  async getUserByPhone(phone: string) {
+    return this.usersData.getUser({ phone });
   }
 
   async createUser(user: UsersRequest) {
