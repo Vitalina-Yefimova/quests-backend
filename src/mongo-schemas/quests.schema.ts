@@ -12,8 +12,8 @@ export class Quests {
   genres: { genreName: string }[];
   @Prop(
     raw({
-      min: { type: Number, required: true, min: 2, max: 8 },
-      max: { type: Number, required: true, min: 2, max: 8 },
+      min: { type: Number, required: true, min: 1 },
+      max: { type: Number, required: true },
     }),
   )
   players: {

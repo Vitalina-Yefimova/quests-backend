@@ -1,3 +1,9 @@
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  CANCELLED = 'CANCELLED',
+}
+
 export interface OrdersRequest {
   userId?: number;
   questId: string;
@@ -12,6 +18,7 @@ export interface OrdersResponse {
   date: Date;
   participants: number;
   price: number;
+  status: OrderStatus;
   createdAt: Date;
   updatedAt: Date;
 }

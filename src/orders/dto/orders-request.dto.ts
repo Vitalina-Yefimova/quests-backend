@@ -1,4 +1,4 @@
-import { IsDateString, IsNumber, IsString, Min, Max } from 'class-validator';
+import { IsDateString, IsNumber, IsString, Min } from 'class-validator';
 import { OrdersRequest } from '../interfaces';
 
 export class OrdersRequestDto {
@@ -11,6 +11,5 @@ export class OrdersRequestDto {
 
   @IsNumber()
   @Min(1)
-  @Max(8)
   participants: number;
 }

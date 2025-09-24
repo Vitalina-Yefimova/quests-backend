@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Quests, QuestsDocument } from 'src/mongo-schemas/quests.schema';
-import { OrdersRequest, OrdersResponse } from './interfaces';
+import { OrdersRequest, OrdersResponse, OrderStatus } from './interfaces';
 
 @Injectable()
 export class OrdersDataService {
@@ -16,7 +16,7 @@ export class OrdersDataService {
     const quest = await this.questsModel.findById(data.questId);
     if (!quest) throw new NotFoundException('Quest not found.');
 
-    return this.prisma.orders.create({
+    const order = await this.prisma.orders.create({
       data: {
         user: { connect: { id: data.userId } },
         questId: data.questId,
@@ -25,6 +25,7 @@ export class OrdersDataService {
         price: quest.price,
       },
     });
+    return { ...order, status: (order as any).status as OrderStatus };
   }
 
   async findOrders(where: any): Promise<OrdersResponse[]> {
@@ -39,26 +40,29 @@ export class OrdersDataService {
         return {
           ...order,
           questTitle: quest?.title || 'Unknown Quest',
-          questId: order.questId
+          questId: order.questId,
+          status: (order as any).status as OrderStatus
         };
       }),
     );
   }
 
   async findById(id: number): Promise<OrdersResponse | null> {
-    return this.prisma.orders.findUnique({
+    const order = await this.prisma.orders.findUnique({
       where: { id },
     });
+    return order ? { ...order, status: (order as any).status as OrderStatus } : null;
   }
 
   async update(
     id: number,
-    data: { date: Date; participants: number },
+    data: { date?: Date; participants?: number; status?: OrderStatus },
   ): Promise<OrdersResponse> {
-    return this.prisma.orders.update({
+    const order = await this.prisma.orders.update({
       where: { id },
       data,
     });
+    return { ...order, status: (order as any).status as OrderStatus };
   }
 
   async delete(id: number): Promise<void> {

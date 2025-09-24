@@ -12,7 +12,7 @@ export class UsersController {
   @Get()
   async getUser(@Headers('authorization') authHeader?: string) {
     const token = authHeader?.replace('Bearer ', '');
-    const user = await this.usersService.getUser(token);
+    const user = await this.usersService.getUser({ token });
 
     if (!user) {
       throw new Error('User not found');

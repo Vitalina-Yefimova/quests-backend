@@ -58,7 +58,7 @@ export class AuthService {
     return { email: user.email }
   }
   async validatePassword(email: string, password: string): Promise<{ id: number, role: string }> {
-    const user = await this.usersService.getUserByEmail(email)
+    const user = await this.usersService.getUser({ email })
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Invalid credentials')
@@ -89,7 +89,7 @@ export class AuthService {
 
       await this.usersService.updateUser({ verify: true, emailVerified: true }, token);
 
-      const user = await this.usersService.getUser(token);
+      const user = await this.usersService.getUser({ token });
 
       const access_token = this.jwtService.sign(
         { sub: user.id, role: user.role },
@@ -140,7 +140,7 @@ export class AuthService {
 
     await this.otpModel.deleteOne({ id: receivedCode.id });
 
-    let user = await this.usersService.getUser(phone)
+    let user = await this.usersService.getUser({ phone })
 
     if (!user) {
       user = await this.usersService.createUser({
@@ -159,7 +159,7 @@ export class AuthService {
   }
 
   async sendResetPasswordEmail(email: string, frontendUrl: string) {
-    const user = await this.usersService.getUserByEmail(email)
+    const user = await this.usersService.getUser({ email })
 
     if (!user) {
       throw new BadRequestException('User not found')
@@ -229,7 +229,7 @@ export class AuthService {
         throw new BadRequestException('Invalid token type')
       }
 
-      const user = await this.usersService.getUser(payload.sub)
+      const user = await this.usersService.getUser({ token })
       if (!user || !user.newEmail) {
         throw new BadRequestException('No new email to verify')
       }

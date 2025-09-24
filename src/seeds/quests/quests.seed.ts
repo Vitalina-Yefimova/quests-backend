@@ -1,11 +1,11 @@
 import mongoose from 'mongoose';
 import * as dotenv from 'dotenv';
 import { questsData } from './questsData';
-import { QuestsSchema } from '@/mongo-schemas/quests.schema';
+import { QuestsSchema } from '../../mongo-schemas/quests.schema';
 
 dotenv.config();
 
-const QuestsModel = mongoose.model('Quests', QuestsSchema)
+const QuestsModel = mongoose.model('Quests', QuestsSchema);
 async function seed() {
   try {
     await mongoose.connect(process.env.MONGO_URI!);

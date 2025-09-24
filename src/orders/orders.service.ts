@@ -5,18 +5,37 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { OrdersDataService } from './orders-data.service';
-import { OrdersRequest, OrdersResponse } from './interfaces';
+import { OrdersRequest, OrdersResponse, OrderStatus } from './interfaces';
 
 @Injectable()
 export class OrdersService {
   constructor(private readonly ordersData: OrdersDataService) { }
 
+  private async checkQuestConflict(questId: string, date: string, excludeOrderId?: number): Promise<void> {
+    const questDate = new Date(date);
+    const existingOrders = await this.ordersData.findOrders({
+      questId,
+      date: questDate,
+      status: { in: [OrderStatus.PENDING, OrderStatus.CONFIRMED] },
+    });
+
+    const conflictingOrders = excludeOrderId
+      ? existingOrders.filter(order => order.id !== excludeOrderId)
+      : existingOrders;
+
+    if (conflictingOrders.length > 0) {
+      throw new BadRequestException(
+        'This quest is already booked for this date.',
+      );
+    }
+  }
+
   async create(data: OrdersRequest): Promise<OrdersResponse> {
     const quest = await this.ordersData['questsModel'].findById(data.questId);
     if (!quest) throw new NotFoundException('Quest not found.');
 
-    const minPlayers = quest.players?.min ?? 1;
-    const maxPlayers = quest.players?.max ?? 8;
+    const minPlayers = quest.players?.min;
+    const maxPlayers = quest.players?.max;
 
     if (data.participants < minPlayers || data.participants > maxPlayers) {
       throw new BadRequestException(
@@ -34,6 +53,8 @@ export class OrdersService {
         'Booking must be made at least 7 days in advance.',
       );
     }
+
+    await this.checkQuestConflict(data.questId, data.date);
 
     return this.ordersData.create(data);
   }
@@ -65,11 +86,15 @@ export class OrdersService {
       throw new ForbiddenException('This is not your order.');
     }
 
+    if (order.status === OrderStatus.CANCELLED) {
+      throw new BadRequestException('Cannot update cancelled order.');
+    }
+
     const quest = await this.ordersData['questsModel'].findById(order.questId);
     if (!quest) throw new NotFoundException('Quest not found.');
 
-    const minPlayers = quest.players?.min ?? 1;
-    const maxPlayers = quest.players?.max ?? 8;
+    const minPlayers = quest.players?.min;
+    const maxPlayers = quest.players?.max;
 
     if (data.participants < minPlayers || data.participants > maxPlayers) {
       throw new BadRequestException(
@@ -78,7 +103,7 @@ export class OrdersService {
     }
 
     const now = new Date();
-    const questDate = new Date(order.date);
+    const questDate = new Date(data.date);
     const diffInDays = Math.ceil(
       (questDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
     );
@@ -88,9 +113,11 @@ export class OrdersService {
       );
     }
 
+    await this.checkQuestConflict(order.questId, data.date, id);
     return this.ordersData.update(id, {
       date: new Date(data.date),
       participants: data.participants,
+      status: OrderStatus.PENDING,
     })
   }
 
@@ -108,5 +135,4 @@ export class OrdersService {
 
     await this.ordersData.delete(id);
   }
-
 }

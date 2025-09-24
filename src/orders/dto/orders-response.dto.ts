@@ -1,6 +1,6 @@
-import { IsNumber, IsDate, IsString, IsOptional } from 'class-validator';
+import { IsNumber, IsDate, IsString, IsOptional, IsEnum } from 'class-validator';
 import { BaseResponseDto } from 'src/common/dto/base-response.dto';
-import { OrdersResponse } from '../interfaces';
+import { OrdersResponse, OrderStatus } from '../interfaces';
 
 export class OrdersResponseDto extends BaseResponseDto<OrdersResponseDto> implements OrdersResponse {
 
@@ -22,6 +22,9 @@ export class OrdersResponseDto extends BaseResponseDto<OrdersResponseDto> implem
 
   @IsNumber()
   price: number;
+
+  @IsEnum(OrderStatus)
+  status: OrderStatus;
 
   @IsDate()
   createdAt: Date;

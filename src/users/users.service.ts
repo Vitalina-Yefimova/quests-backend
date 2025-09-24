@@ -10,9 +10,18 @@ export class UsersService {
     private readonly jwtService: JwtService,
   ) { }
 
-  async getUser(token: string) {
-    const id = this.getUserIdFromToken(token);
-    return this.usersData.getUser({ id });
+  async getUser(params: { token?: string; email?: string; phone?: string }) {
+    if (params.token) {
+      const id = this.getUserIdFromToken(params.token);
+      return this.usersData.getUser({ id });
+    }
+    if (params.email) {
+      return this.usersData.getUser({ email: params.email });
+    }
+    if (params.phone) {
+      return this.usersData.getUser({ phone: params.phone });
+    }
+    return null;
   }
 
   private getUserIdFromToken(token: string): number {
@@ -30,21 +39,13 @@ export class UsersService {
     }
   }
 
-  async getUserByEmail(email: string) {
-    return this.usersData.getUser({ email });
-  }
-
-  async getUserByPhone(phone: string) {
-    return this.usersData.getUser({ phone });
-  }
-
   async createUser(user: UsersRequest) {
     return this.usersData.createUser(user);
   }
 
   async updateUser(data: Partial<Pick<UsersRequest, 'firstName' | 'lastName' | 'phone' | 'password' | 'email' | 'verify' | 'newEmail' | 'emailVerified'> & { oldPassword?: string }>, token?: string) {
 
-    const user = await this.getUser(token);
+    const user = await this.getUser({ token });
     if (!user)
       throw new Error('User not found');
 
@@ -68,7 +69,7 @@ export class UsersService {
           secret: process.env.JWT_SECRET,
         })
         type = payload.type
-      } catch (e) {
+      } catch (error) {
         throw new UnauthorizedException('Invalid or expired token')
       }
     }
